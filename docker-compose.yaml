@@ -1,0 +1,40 @@
+services:
+  frontend:
+    build:
+      context: frontend
+      target: development
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    env_file:
+      - frontend/.env
+    stdin_open: true
+    restart: always
+    networks:
+      - react-express
+      - app-network
+    depends_on:
+      - backend
+
+  backend:
+    restart: always
+    build:
+      context: backend
+      target: development
+    network_mode: "host"
+    env_file:
+      - backend/.env
+    environment:
+      - HOST=${MONGO_DB_HOST}  # Now 127.0.0.1 refers to the host's loopback interface
+      - DB_PORT=${MONGO_DB_PORT}
+      - DATABASE_NAME=${MONGO_DB_NAME}
+      - DATABASE_USER=${MONGO_DB_USER}
+      - DATABASE_PASSWORD=${MONGO_DB_PASSWORD}
+      - DATABASE_AUTH=${MONGO_DB_AUTH}
+    expose:
+      - 3000
+
+networks:    
+  react-express:  # Ensure this network is defined if needed
+    driver: bridge
+  app-network:
+    driver: bridge
