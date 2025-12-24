@@ -98,7 +98,17 @@ fi
 
 # Fetching the latest repository changes
 print_yellow "Fetching the latest repository changes"
-git checkout . || handle_error "❌ Failed to restore tracked files"
+# git checkout . || handle_error "❌ Failed to restore tracked files"
+# Restore tracked files only if repository has tracked files
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if [ -n "$(git ls-files)" ]; then
+        git checkout . || handle_error "❌ Failed to restore tracked files"
+    else
+        print_yellow "Skipping git checkout . (no tracked files yet)"
+    fi
+else
+    print_yellow "Skipping git checkout . (not a git repository yet)"
+fi
 git fetch --depth=1 origin ${GIT_BRANCH_NAME} || handle_error "Failed to fetch from remote repository."
 # git reset --hard origin/${GIT_BRANCH_NAME} || handle_error "Failed to reset to origin/${GIT_BRANCH_NAME}."
 git checkout origin/${GIT_BRANCH_NAME} || git checkout -b ${GIT_BRANCH_NAME} origin/${GIT_BRANCH_NAME} || handle_error "Failed to checkout ${GIT_BRANCH_NAME}"
