@@ -72,6 +72,8 @@ print_red() {
 handle_error() {
   local message="$1"
   print_red "$message"
+  echo ""
+  read -p "Press Enter to exit..."
   exit 1 # Exit with a non-zero code indicating failure.
 }
 
@@ -89,12 +91,19 @@ fi
 
 # Check for .git directory
 print_yellow "Check for .git directory"
+REPO_JUST_INITIALIZED=false
 if [ ! -d ".git" ]; then
     print_green "No .git directory found. Resetting the repository..."
     sudo rm -rf -- .[^.] || handle_error "Failed to remove existing files/directories."
     git init || handle_error "Failed to initialize Git repository."
-    git remote add origin https://github.com/unityri/unity.git || handle_error "Failed to add remote origin."
+    git remote add origin https://github.com/unityri/unity || handle_error "Failed to add remote origin."
+    REPO_JUST_INITIALIZED=true
 fi
+
+# Configure Git safe directory to avoid ownership issues
+print_yellow "Configuring Git safe directory..."
+git config --global --add safe.directory "$UNITY_PACKAGE_ROOT_PATH" 2>/dev/null || true
+git config --global --add safe.directory "$(pwd)" 2>/dev/null || true
 
 # Fetching the latest repository changes
 print_yellow "Fetching the latest repository changes"
@@ -109,7 +118,20 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 else
     print_yellow "Skipping git checkout . (not a git repository yet)"
 fi
-git fetch --depth=1 origin ${GIT_BRANCH_NAME} || handle_error "Failed to fetch from remote repository."
+
+# Verify remote exists before fetching
+if ! git remote get-url origin >/dev/null 2>&1; then
+    print_yellow "Remote 'origin' not found. Adding it now..."
+    git remote add origin https://github.com/unityri/unity || handle_error "Failed to add remote origin."
+fi
+
+# Display remote URL for debugging
+print_yellow "Fetching from remote: $(git remote get-url origin)"
+
+git fetch --depth=1 origin ${GIT_BRANCH_NAME} || handle_error "Failed to fetch from remote repository. Please check:
+1. Network connectivity
+2. Repository access rights (may need authentication for private repos)
+3. Repository URL is correct: https://github.com/unityri/unity"
 # git reset --hard origin/${GIT_BRANCH_NAME} || handle_error "Failed to reset to origin/${GIT_BRANCH_NAME}."
 git checkout origin/${GIT_BRANCH_NAME} || git checkout -b ${GIT_BRANCH_NAME} origin/${GIT_BRANCH_NAME} || handle_error "Failed to checkout ${GIT_BRANCH_NAME}"
 
@@ -206,7 +228,7 @@ print_green  "Updated .env files successfully."
 
 print_yellow "Executing database import script..."
 if [ -f ./mongoImport.sh ]; then
-  . ./mongoImport.sh
+  bash ./mongoImport.sh || print_yellow "mongoImport.sh encountered an error, but continuing..."
 else
   print_yellow "No mongoImport.sh file found, proceeding without it."
 fi
