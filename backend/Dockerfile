@@ -1,26 +1,31 @@
-# Base image
-FROM ubuntu:latest AS development
+# Base image - use official Node image instead of Ubuntu
+FROM node:16-bullseye AS development
 
-# Update and install dependencies
-RUN apt update && apt-get update && apt-get install -y \
+# Install Google Chrome dependencies and Chrome
+RUN apt-get update && apt-get install -y \
     wget \
     gnupg2 \
-    curl \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libgdk-pixbuf2.0-0 \
+    libnspr4 \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Google Chrome (for Puppeteer or other headless tasks)
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
-    apt-get update && apt-get install -y google-chrome-stable && \
-    rm -rf /var/lib/apt/lists/*
-
-# Confirm installation
-RUN google-chrome-stable --version
-
-# Install Node.js 16
-RUN curl -sL https://deb.nodesource.com/setup_16.x -o nodesource_setup.sh && \
-    bash nodesource_setup.sh && \
-    apt-get install -y nodejs
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -29,7 +34,8 @@ WORKDIR /usr/src/app
 COPY package*.json .npmrc ./
 
 # Install dependencies with optimized settings
-RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --verbose
+RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --no-audit --no-fund --prefer-offline || \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --no-audit --no-fund --legacy-peer-deps
 
 # Copy application code
 COPY . .
