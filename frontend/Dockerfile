@@ -4,9 +4,9 @@ FROM node:16-alpine AS development
 # Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and install dependencies
-COPY package.json ./
-RUN npm install --legacy-peer-deps 
+# Copy package.json, .npmrc and install dependencies
+COPY package.json .npmrc ./
+RUN npm install --legacy-peer-deps --verbose 
 RUN mkdir -p /usr/src/app/node_modules/.cache && \
     chmod -R 777 /usr/src/app/node_modules/.cache
 # Copy the application source code
