@@ -25,10 +25,11 @@ RUN curl -sL https://deb.nodesource.com/setup_16.x -o nodesource_setup.sh && \
 # Set working directory
 WORKDIR /usr/src/app
 
-# Copy package files and install dependencies
-COPY package*.json ./
-# RUN npm install
-RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install
+# Copy package files and npm configuration
+COPY package*.json .npmrc ./
+
+# Install dependencies with optimized settings
+RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --verbose
 
 # Copy application code
 COPY . .
