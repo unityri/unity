@@ -26,15 +26,16 @@ var pdfpathexistance = require("path").resolve("public");
 async function generatePdf(html, outputPath, options = { format: "A4" }, userDetailsHtml) {
   try {
     const browser = await puppeteer.launch({
-      timeout: 3000,
+      // timeout: 3000,
       headless: true, // true|false
       ignoreHTTPSErrors: true,
       ignoreDefaultArgs: ["--disable-extensions"],
-      waitUntil: ["load", "domcontentloaded", "networkidle0", "networkidle2"],
+      // waitUntil: ["load", "domcontentloaded", "networkidle0", "networkidle2"],
       defaultViewport: null, // Set to null for full screen,
       // executablePath: "",
+      executablePath: '/usr/bin/google-chrome-stable',
       // cacheDirectory: cacheDir,
-      cacheDirectory: puppeteer.executablePath(),
+      // cacheDirectory: puppeteer.executablePath(),
       // cacheDirectory: pdfpath.join(pdfpath.resolve("./"), ".cache", "puppeteer"),
       args: [
         "--no-sandbox",
@@ -43,9 +44,18 @@ async function generatePdf(html, outputPath, options = { format: "A4" }, userDet
         "--disable-accelerated-2d-canvas",
         "--no-first-run",
         "--no-zygote",
-        // "--single-process",
         "--disable-gpu",
       ],
+      // args: [
+      //   "--no-sandbox",
+      //   "--disable-setuid-sandbox",
+      //   "--disable-dev-shm-usage",
+      //   "--disable-accelerated-2d-canvas",
+      //   "--no-first-run",
+      //   "--no-zygote",
+      //   // "--single-process",
+      //   "--disable-gpu",
+      // ],
     });
 
     const page = await browser.newPage();
@@ -473,3 +483,4 @@ exports.sendSMSPostment = async function (req, res, next) {
     return res.status(200).json({ status: 200, flag: false, message: error.message });
   }
 }
+
