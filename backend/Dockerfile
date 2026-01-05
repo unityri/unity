@@ -33,9 +33,14 @@ WORKDIR /usr/src/app
 # Copy package files and npm configuration
 COPY package*.json .npmrc ./
 
-# Install dependencies with optimized settings
-RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --no-audit --no-fund --prefer-offline || \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --no-audit --no-fund --legacy-peer-deps
+# Install heavy packages separately first (with longer timeout per package)
+RUN npm config set network-timeout 600000 && \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --no-save puppeteer@21.0.1 --no-audit --no-fund || true
+
+RUN npm install --no-save aws-sdk@2.1667.0 --no-audit --no-fund || true
+
+# Now install all dependencies (should be faster as heavy ones are cached)
+RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --no-audit --no-fund 2>&1 | head -100
 
 # Copy application code
 COPY . .
