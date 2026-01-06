@@ -8,7 +8,7 @@ UNITY_PACKAGE_ROOT_PATH="../unity-package"
 
 # Set git repo branch name
 GIT_BRANCH_NAME=master
-#Example:
+# Example:
 # v0.0.1 or v0.0.2
 
 #=============================================================================
@@ -47,7 +47,7 @@ MONGO_DB_AUTH=""
 # Set to "true" or "false" for Blank (true) data on server
 IS_EMPTY_BLANK_DATA_DISPLAY="false"
 
-
+#=============================================================================
 # Function to print descriptions in color
 print_yellow() {
     echo ""
@@ -74,13 +74,13 @@ handle_error() {
   print_red "$message"
   echo ""
   read -p "Press Enter to exit..."
-  exit 1 # Exit with a non-zero code indicating failure.
+  exit 1
 }
 
-
+#=============================================================================
 # Checking if Git is installed
 print_yellow "Checking if Git is installed..."
-if ! [ -x "$(command -v git)" ]; then
+if ! command -v git >/dev/null 2>&1; then
     print_green "Git is not installed. Installing Git..."
     sudo apt update -y || handle_error "Failed to update apt package list."
     sudo apt install -y git || handle_error "Failed to install Git."
@@ -89,80 +89,56 @@ else
     print_green "Git is already installed."
 fi
 
+#=============================================================================
 # Check for .git directory
 print_yellow "Check for .git directory"
-REPO_JUST_INITIALIZED=false
 if [ ! -d ".git" ]; then
-    print_green "No .git directory found. Resetting the repository..."
-    sudo rm -rf -- .[^.] || handle_error "Failed to remove existing files/directories."
+    print_green "No .git directory found. Initializing repository..."
     git init || handle_error "Failed to initialize Git repository."
     git remote add origin https://github.com/unityri/unity || handle_error "Failed to add remote origin."
-    REPO_JUST_INITIALIZED=true
 fi
 
 # Configure Git safe directory to avoid ownership issues
 print_yellow "Configuring Git safe directory..."
-git config --global --add safe.directory "$UNITY_PACKAGE_ROOT_PATH" 2>/dev/null || true
 git config --global --add safe.directory "$(pwd)" 2>/dev/null || true
 
+#=============================================================================
 # Fetching the latest repository changes
 print_yellow "Fetching the latest repository changes"
-# git checkout . || handle_error "❌ Failed to restore tracked files"
-# Restore tracked files only if repository has tracked files
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    if [ -n "$(git ls-files)" ]; then
-        git checkout . || handle_error "❌ Failed to restore tracked files"
-    else
-        print_yellow "Skipping git checkout . (no tracked files yet)"
-    fi
-else
-    print_yellow "Skipping git checkout . (not a git repository yet)"
-fi
 
-# Verify remote exists before fetching
-if ! git remote get-url origin >/dev/null 2>&1; then
-    print_yellow "Remote 'origin' not found. Adding it now..."
-    git remote add origin https://github.com/unityri/unity || handle_error "Failed to add remote origin."
-fi
+git fetch --depth=1 origin ${GIT_BRANCH_NAME} || handle_error "Failed to fetch from remote repository."
+git checkout ${GIT_BRANCH_NAME} 2>/dev/null || git checkout -b ${GIT_BRANCH_NAME} origin/${GIT_BRANCH_NAME} || handle_error "Failed to checkout branch."
+git reset --hard origin/${GIT_BRANCH_NAME} || handle_error "Failed to reset branch."
 
-# Display remote URL for debugging
-print_yellow "Fetching from remote: $(git remote get-url origin)"
-
-git fetch --depth=1 origin ${GIT_BRANCH_NAME} || handle_error "Failed to fetch from remote repository. Please check:
-1. Network connectivity
-2. Repository access rights (may need authentication for private repos)
-3. Repository URL is correct: https://github.com/unityri/unity"
-# git reset --hard origin/${GIT_BRANCH_NAME} || handle_error "Failed to reset to origin/${GIT_BRANCH_NAME}."
-git checkout origin/${GIT_BRANCH_NAME} || git checkout -b ${GIT_BRANCH_NAME} origin/${GIT_BRANCH_NAME} || handle_error "Failed to checkout ${GIT_BRANCH_NAME}"
-
+#=============================================================================
 # Set 777 permission for Unity package root path
 print_yellow "Setting 0777 permissions for Unity package directory..."
 if [ -d "$UNITY_PACKAGE_ROOT_PATH" ]; then
-    sudo chmod -R 0777 "$UNITY_PACKAGE_ROOT_PATH" || handle_error "Failed to set permissions on Unity package directory."
-    print_green "Permissions set successfully."
+    sudo chmod -R 0777 "$UNITY_PACKAGE_ROOT_PATH" || handle_error "Failed to set permissions."
 else
     handle_error "Unity package root path does not exist: $UNITY_PACKAGE_ROOT_PATH"
 fi
 
-# Set environment variables dynamically
-print_yellow "Set environment variables dynamically"
-export FRONTEND_PORT=$FRONTEND_PORT
-export BACKEND_PORT=$BACKEND_PORT
-export MONGO_DB_HOST=$MONGO_DB_HOST
-export MONGO_DB_PORT=$MONGO_DB_PORT
-export MONGO_DB_NAME=$MONGO_DB_NAME
-export MONGO_DB_DUMP_DIR=$MONGO_DB_DUMP_DIR
+#=============================================================================
+# Export environment variables
+print_yellow "Exporting environment variables"
+export FRONTEND_PORT
+export BACKEND_PORT
+export MONGO_DB_HOST
+export MONGO_DB_PORT
+export MONGO_DB_NAME
+export MONGO_DB_DUMP_DIR
+export MONGO_DB_SECURED
+export MONGO_DB_USER
+export MONGO_DB_PASSWORD
+export MONGO_DB_AUTH
 
-export MONGO_DB_SECURED=$MONGO_DB_SECURED # Enable (true|false) if mongo database is secure
-export MONGO_DB_USER=$MONGO_DB_USER
-export MONGO_DB_PASSWORD=$MONGO_DB_PASSWORD
-export MONGO_DB_AUTH=$MONGO_DB_AUTH
-
-# Construct full API URLs
+# Construct URLs
 FRONTEND_WEB_URL="${IP_ADDRESS}:${FRONTEND_PORT}"
 BACKEND_API_URL="${IP_ADDRESS}:${BACKEND_PORT}"
 
-# Define variables
+#=============================================================================
+# Define env files
 ROOT_ENV_FILE="./.env"
 BACKEND_ENV_FILE="./backend/.env"
 FRONTEND_ENV_FILE="./frontend/.env"
@@ -173,20 +149,17 @@ update_environment_file() {
     local key=$2
     local value=$3
 
-    # Check if .env file exists, create if not
-    if [ ! -f "$env_file" ]; then
-        touch "$env_file" || handle_error "Failed to create $env_file."
-    fi
+    [ ! -f "$env_file" ] && touch "$env_file"
 
-    # If key exists, update it; otherwise, append it
     if grep -q "^$key=" "$env_file"; then
-        sed -i "s|^$key=.*|$key=$value|" "$env_file" || handle_error "Failed to update $key in $env_file."
+        sed -i "s|^$key=.*|$key=$value|" "$env_file"
     else
-        echo "$key=$value" >> "$env_file" || handle_error "Failed to append $key to $env_file."
+        echo "$key=$value" >> "$env_file"
     fi
 }
 
-# Update backend .env
+#=============================================================================
+# Update root .env
 print_yellow "Updating root .env file..."
 update_environment_file "$ROOT_ENV_FILE" "FRONTEND_PORT" "$FRONTEND_PORT"
 update_environment_file "$ROOT_ENV_FILE" "BACKEND_PORT" "$BACKEND_PORT"
@@ -200,141 +173,112 @@ update_environment_file "$ROOT_ENV_FILE" "MONGO_DB_PASSWORD" "$MONGO_DB_PASSWORD
 update_environment_file "$ROOT_ENV_FILE" "MONGO_DB_AUTH" "$MONGO_DB_AUTH"
 update_environment_file "$ROOT_ENV_FILE" "REACT_APP_IS_EMPTY_BLANK_DATA_DISPLAY" "$IS_EMPTY_BLANK_DATA_DISPLAY"
 
+#=============================================================================
+# Update backend .env
 print_yellow "Updating backend .env file..."
 update_environment_file "$BACKEND_ENV_FILE" "FRONT_WEB_URL" "$FRONTEND_WEB_URL"
 update_environment_file "$BACKEND_ENV_FILE" "PORT" "$BACKEND_PORT"
-if [ "$MONGO_DB_SECURED" = true ]; then
-    update_environment_file "$BACKEND_ENV_FILE" "APP_MODE" "production"
-else
-    update_environment_file "$BACKEND_ENV_FILE" "APP_MODE" "development"
-fi
 update_environment_file "$BACKEND_ENV_FILE" "DATABASE_NAME" "$MONGO_DB_NAME"
 update_environment_file "$BACKEND_ENV_FILE" "DB_PORT" "$MONGO_DB_PORT"
-update_environment_file "$BACKEND_ENV_FILE" "MONGO_DB_USER" "$DATABASE_USER"
+update_environment_file "$BACKEND_ENV_FILE" "DATABASE_USER" "$MONGO_DB_USER"
 update_environment_file "$BACKEND_ENV_FILE" "DATABASE_PASSWORD" "$MONGO_DB_PASSWORD"
 update_environment_file "$BACKEND_ENV_FILE" "DATABASE_AUTH" "$MONGO_DB_AUTH"
 update_environment_file "$BACKEND_ENV_FILE" "BACK_UNITY_URL" "$BACKEND_API_URL"
 
+#=============================================================================
 # Update frontend .env
 print_yellow "Updating frontend .env file..."
-update_environment_file "$FRONTEND_ENV_FILE" "REACT_APP_BASENAME" "$COMPANY_NAME"
 update_environment_file "$FRONTEND_ENV_FILE" "REACT_APP_BACKEND_REST_API_URL" "$BACKEND_API_URL"
 update_environment_file "$FRONTEND_ENV_FILE" "PORT" "$FRONTEND_PORT"
 update_environment_file "$FRONTEND_ENV_FILE" "REACT_APP_COMPANY_NAME" "$COMPANY_NAME"
 update_environment_file "$FRONTEND_ENV_FILE" "REACT_APP_COMPANY_URL" "$COMPANY_URL"
 update_environment_file "$FRONTEND_ENV_FILE" "REACT_APP_IS_EMPTY_BLANK_DATA_DISPLAY" "$IS_EMPTY_BLANK_DATA_DISPLAY"
 
-print_green  "Updated .env files successfully."
+print_green "Updated .env files successfully."
 
+#=============================================================================
+# Mongo DB Import
 print_yellow "Executing database import script..."
-if [ -f ./mongoImport.sh ]; then
-  bash ./mongoImport.sh || print_yellow "mongoImport.sh encountered an error, but continuing..."
-else
-  print_yellow "No mongoImport.sh file found, proceeding without it."
-fi
+[ -f ./mongoImport.sh ] && bash ./mongoImport.sh || print_yellow "mongoImport.sh not found or failed."
 
-# Check and install NGINX
-print_yellow "Check is NGINX installed."
-if which nginx > /dev/null 2>&1; then
+#=============================================================================
+# Install NGINX
+print_yellow "Check if NGINX is installed."
+if command -v nginx >/dev/null 2>&1; then
     print_green "NGINX is already installed."
 else
-    print_green "NGINX is not install, now install NGINX"
-    # Update package list
-    sudo apt update -y || handle_error "Failed to update apt package list for Nginx installation."
-
-    # Install NGINX
-    sudo apt install -y nginx || handle_error "Failed to install Nginx."
-
-    # Enable and start NGINX service
-    sudo systemctl enable nginx || handle_error "Failed to enable Nginx service."
-    sudo systemctl start nginx || handle_error "Failed to start Nginx service."
-
+    print_green "NGINX is not installed. Installing NGINX..."
+    sudo apt update -y || handle_error "Failed to update apt package list for NGINX installation."
+    sudo apt install -y nginx || handle_error "Failed to install NGINX."
+    sudo systemctl enable nginx || handle_error "Failed to enable NGINX service."
+    sudo systemctl start nginx || handle_error "Failed to start NGINX service."
     print_green "NGINX installation completed successfully."
 fi
 
 # Check if NGINX is running
-print_yellow "Check if NGINX is running"
+print_yellow "Check if NGINX is running..."
 if systemctl is-active --quiet nginx; then
     print_green "NGINX is running."
 else
     print_green "NGINX is NOT running. Restarting..."
-    sudo systemctl restart nginx || handle_error "Failed to restart Nginx service."
-    print_green "NGINX restarted."
+    sudo systemctl restart nginx || handle_error "Failed to restart NGINX service."
+    print_green "NGINX restarted successfully."
 fi
 
-
-# Install Docker and Docker Compose if they are not already installed.
-print_yellow "Install Docker and Docker Compose if they are not already installed."
-if ! [ -x "$(command -v docker)" ]; then
+#=============================================================================
+# Install Docker and Docker Compose
+print_yellow "Check if Docker is installed."
+if command -v docker >/dev/null 2>&1; then
+    print_green "Docker is already installed."
+else
+    print_green "Docker is not installed. Installing Docker..."
 
     # Update package list and install dependencies
-    sudo apt update || handle_error "Failed to update apt package list for Docker installation."
+    sudo apt update -y || handle_error "Failed to update apt package list for Docker installation."
     sudo apt install -y ca-certificates curl gnupg || handle_error "Failed to install dependencies for Docker."
 
     # Add Docker's official GPG key
     sudo install -m 0755 -d /etc/apt/keyrings || handle_error "Failed to create directory for Docker GPG key."
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null || handle_error "Failed to download and save Docker GPG key."
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null || handle_error "Failed to download Docker GPG key."
     sudo chmod a+r /etc/apt/keyrings/docker.asc || handle_error "Failed to set permissions on Docker GPG key."
 
     # Set up the Docker repository
     echo "deb [signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null || handle_error "Failed to add Docker repository."
 
     # Update package list again
-    sudo apt update || handle_error "Failed to update apt package list after adding Docker repository."
+    sudo apt update -y || handle_error "Failed to update apt package list after adding Docker repository."
 
-    # Install Docker
+    # Install Docker packages
     sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || handle_error "Failed to install Docker packages."
 
     # Start and enable Docker service
     sudo systemctl start docker || handle_error "Failed to start Docker service."
     sudo systemctl enable docker || handle_error "Failed to enable Docker service."
 
-    print_green "Docker installed successfully!"
-else
-    print_green "Docker is already installed."
+    print_green "Docker installed successfully."
 fi
 
 # Ensure Docker service is running
-print_yellow "Ensure Docker service is running"
-if ! systemctl is-active --quiet docker; then
-    print_green "Docker service is not running. Starting Docker..."
+print_yellow "Check if Docker is running..."
+if systemctl is-active --quiet docker; then
+    print_green "Docker service is running."
+else
+    print_green "Docker service is NOT running. Starting Docker..."
     sudo systemctl start docker || handle_error "Failed to start Docker service."
-    print_green "Docker started."
-else
-    print_green "Docker service is already running."
+    print_green "Docker started successfully."
 fi
 
-print_yellow "Install Docker Compose"
-if ! [ -x "$(command -v docker-compose)" ]; then
-    # Fetch the latest version dynamically
-    LATEST_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -o '"tag_name": "v[0-9.]*"' | grep -o 'v[0-9.]*')
+#=============================================================================
+# Run Docker Compose
+print_yellow "Running Docker Compose..."
+sudo docker compose down 2>/dev/null || sudo docker-compose down 2>/dev/null || true
+sudo docker compose up --build -d 2>/dev/null || sudo docker-compose up --build -d || handle_error "Docker Compose failed."
 
-    # Install Docker Compose
-    sudo curl -L "https://github.com/docker/compose/releases/download/${LATEST_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose || handle_error "Failed to download Docker Compose."
-    sudo chmod +x /usr/local/bin/docker-compose || handle_error "Failed to set permissions on Docker Compose."
-
-    print_green "Docker Compose ${LATEST_VERSION} installed successfully."
-else
-    print_green "Docker Compose is already installed."
-fi
-
-# Pull code and run docker-compose up --build -d
-# Assuming your code is already in the current directory
-print_yellow "Running docker-compose up --build -d..."
-sudo docker-compose down && sudo docker-compose up --build -d
-
-# End time
+#=============================================================================
+# Finish
 END_TIME=$(date +%s)
+ELAPSED_TIME=$((END_TIME - START_TIME))
 
-# Calculate elapsed time
-ELAPSED_TIME=$(($END_TIME - $START_TIME))
-HOURS=$(($ELAPSED_TIME / 3600))
-MINUTES=$((($ELAPSED_TIME % 3600) / 60))
-SECONDS=$(($ELAPSED_TIME % 60))
-echo ""
 print_yellow "Installation completed!"
-echo ""
-print_yellow "Total execution time: ${HOURS} hours, ${MINUTES} minutes, and ${SECONDS} seconds."
-echo ""
+print_yellow "Execution time: ${ELAPSED_TIME} seconds"
 print_yellow "Access the Unity portal at $FRONTEND_WEB_URL"
-
