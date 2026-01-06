@@ -1,0 +1,10 @@
+#ignore node modules
+node_modules
+node_modules/*
+
+#ignore public images
+public/*
+
+# NPM lock fils
+*-lock*.*
+*.lock

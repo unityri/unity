@@ -1,0 +1,12 @@
+/build
+/node_modules
+package-lock.json
+/build
+.vscode
+.eslintcache
+.idea
+
+# NPM lock fils
+*-lock*.*
+*.lock
+yarn.lock
