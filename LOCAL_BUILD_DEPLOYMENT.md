@@ -290,15 +290,31 @@ show collections
 
 ## Step 1: Build Locally
 
-### 1.1 Navigate to Project Directory
+### 1.1 Clone the Repository (First Time Only)
+
+**If you don't have the code yet, clone it first:**
+
+```bash
+# Create projects directory
+mkdir -p ~/projects
+cd ~/projects
+
+# Clone the repository
+git clone https://github.com/unityri/unity.git unity-package
+
+# Navigate into the project
+cd unity-package
+```
+
+**If you already have the code, just navigate to it:**
 ```bash
 cd /path/to/your-project
-# Example: cd /home/user/projects/unity-app
+# Example: cd ~/projects/unity-package
 ```
 
 ### 1.2 Ensure Latest Code
 ```bash
-# Pull latest changes from Git (if applicable)
+# Pull latest changes from Git
 git pull origin master
 
 # Verify docker-compose.yaml has image tags
@@ -333,6 +349,9 @@ Building backend
  => => naming to ntm-unityri-unity-backend:latest
 ```
 
+> 📸 **Screenshot Placeholder:** *Terminal showing Docker build progress with success messages*
+> ![Docker Build Progress](screenshots/docker-build-progress.png)
+
 ### 1.4 Verify Images
 ```bash
 sudo docker images | grep ntm-unityri-unity
@@ -343,6 +362,9 @@ sudo docker images | grep ntm-unityri-unity
 ntm-unityri-unity-backend     latest    def456...   2 minutes ago   1.2GB
 ntm-unityri-unity-frontend    latest    abc123...   5 minutes ago   450MB
 ```
+
+> 📸 **Screenshot Placeholder:** *Terminal showing docker images output with both images listed*
+> ![Docker Images List](screenshots/docker-images-list.png)
 
 ### 1.5 Save Images to Archive Files
 ```bash
@@ -377,6 +399,9 @@ scp backend.tar.gz frontend.tar.gz username@your-server-ip:/tmp/
 # frontend.tar.gz   100%  120MB   14.8MB/s   00:08
 ```
 
+> 📸 **Screenshot Placeholder:** *Terminal showing SCP transfer progress with percentage and speed*
+> ![SCP Transfer Progress](screenshots/scp-transfer-progress.png)
+
 ### 2.2 Verify Transfer
 ```bash
 # SSH to cloud server
@@ -396,10 +421,28 @@ ls -lh /tmp/*.tar.gz
 
 **All commands below run on cloud server via SSH**
 
-### 3.1 Navigate to Project Directory
+### 3.1 Clone or Navigate to Project Directory
+
+**If this is a fresh server (first time setup):**
+```bash
+# Create projects directory
+mkdir -p ~/projects
+cd ~/projects
+
+# Clone the repository
+git clone https://github.com/unityri/unity.git unity-package
+
+# Navigate into the project
+cd unity-package
+```
+
+**If you already have the code:**
 ```bash
 cd /path/to/your-project
-# Example: cd /home/user/projects/unity-app
+# Example: cd ~/projects/unity-package
+
+# Pull latest code from Git
+git pull origin master
 ```
 
 ### 3.2 Stop Existing Containers
@@ -439,6 +482,9 @@ sudo docker load < /tmp/frontend.tar.gz
 # Loaded image: ntm-unityri-unity-frontend:latest
 ```
 
+> 📸 **Screenshot Placeholder:** *Terminal showing docker load command with "Loaded image" success message*
+> ![Docker Load Success](screenshots/docker-load-success.png)
+
 ### 3.5 Verify Images Loaded
 ```bash
 sudo docker images | grep ntm-unityri-unity
@@ -471,6 +517,9 @@ NAME                       IMAGE                               STATUS         PO
 unity-package-backend-1    ntm-unityri-unity-backend:latest    Up 30 seconds
 unity-package-frontend-1   ntm-unityri-unity-frontend:latest   Up 30 seconds  0.0.0.0:8081->8081/tcp
 ```
+
+> 📸 **Screenshot Placeholder:** *Terminal showing docker-compose ps with both containers showing "Up" status*
+> ![Docker Compose Status](screenshots/docker-compose-status.png)
 
 ### 3.8 Check Container Logs
 ```bash
@@ -672,6 +721,9 @@ curl http://your-server-ip:8081
 - ✅ Frontend can communicate with backend
 - ✅ No console errors (F12 Developer Tools)
 - ✅ API endpoints respond correctly
+
+> 📸 **Screenshot Placeholder:** *Web browser showing Unity application frontend at http://your-server-ip:8081*
+> ![Browser Frontend](screenshots/browser-frontend-local.png)
 
 ### 5.4 Health Check Endpoints
 
