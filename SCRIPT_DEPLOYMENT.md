@@ -117,6 +117,9 @@ ssh username@your-server-ip
 # ssh admin@123.45.67.89
 ```
 
+> 📸 **Screenshot Placeholder:** *SSH terminal connection showing successful login to server*
+> ![SSH Connection](screenshots/ssh-connection.png)
+
 ### 1.2 Download and Copy the Script
 
 **⚠️ IMPORTANT:** Don't edit the original `unitysetup.sh` file directly!
@@ -138,7 +141,7 @@ cp unitysetup.sh deploy.sh
 # cp unitysetup.sh deploy.sh
 
 # Option 3: Download from repository first
-# wget https://raw.githubusercontent.com/your-repo/master/unitysetup.sh
+# wget https://raw.githubusercontent.com/unityri/unity/master/unitysetup.sh
 # cp unitysetup.sh deploy.sh
 ```
 
@@ -160,6 +163,9 @@ ls -la deploy.sh
 ├── unitysetup.sh    ← Original (will be overwritten by git pull)
 └── deploy.sh        ← Your configured copy (safe from git pull)
 ```
+
+> 📸 **Screenshot Placeholder:** *Terminal showing `ls -la` with both files visible*
+> ![File Structure](screenshots/file-structure.png)
 
 ---
 
@@ -187,6 +193,9 @@ nano unitysetup.sh  # Wrong! Your changes will be lost!
 nano deploy.sh      # Correct! Your changes are safe!
 ```
 
+> 📸 **Screenshot Placeholder:** *Nano editor opened with deploy.sh file showing configuration variables*
+> ![Nano Editor](screenshots/nano-editor-config.png)
+
 ### 2.2 Update Required Settings
 
 **Find and update these lines in the script:**
@@ -204,6 +213,9 @@ IP_ADDRESS="http://123.45.67.89"
 - Use **public IP** (not private IP like 192.168.x.x)
 - Include `http://` prefix
 - **No trailing slash** at the end
+
+> 📸 **Screenshot Placeholder:** *Nano editor with IP_ADDRESS line highlighted showing where to enter your IP*
+> ![IP Address Config](screenshots/ip-address-config.png)
 
 #### B. Set Company Information (Lines 24-25) - Optional
 ```bash
@@ -227,7 +239,7 @@ MONGO_DB_AUTH=""
 #### D. Git Repository (Line 98) - Optional
 ```bash
 # If using different repository, update:
-git remote add origin https://github.com/your-username/your-repo
+git remote add origin https://github.com/unityri/unity
 ```
 
 ### 2.3 Save and Exit
@@ -294,6 +306,9 @@ Building backend...
 ========================================================
 ```
 
+> 📸 **Screenshot Placeholder:** *Terminal showing colored deployment progress with success messages*
+> ![Deployment Progress](screenshots/deployment-progress.png)
+
 ### 3.3 Expected Duration
 
 | Phase | Time | What's Happening |
@@ -321,6 +336,9 @@ NAME                       STATUS         PORTS
 unity-package-backend-1    Up 2 minutes
 unity-package-frontend-1   Up 2 minutes   0.0.0.0:8081->8081/tcp
 ```
+
+> 📸 **Screenshot Placeholder:** *Terminal showing docker-compose ps output with both containers "Up"*
+> ![Docker Containers Status](screenshots/docker-containers-status.png)
 
 **✅ Both containers should show "Up"**
 
@@ -373,6 +391,9 @@ curl http://localhost:8081
 **✅ You should see:**
 - Frontend: Login page or dashboard
 - Backend: API response or welcome message
+
+> 📸 **Screenshot Placeholder:** *Web browser showing Unity application login page at http://your-server-ip:8081*
+> ![Browser Frontend](screenshots/browser-frontend.png)
 
 ---
 
@@ -532,7 +553,7 @@ ping -c 3 github.com
 git remote -v
 
 # Update repository URL if needed
-git remote set-url origin https://github.com/your-username/your-repo
+git remote set-url origin https://github.com/unityri/unity
 
 # Try manual fetch
 git fetch origin master

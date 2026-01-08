@@ -107,7 +107,9 @@ git config --global --add safe.directory "$(pwd)" 2>/dev/null || true
 print_yellow "Fetching the latest repository changes"
 
 git fetch --depth=1 origin ${GIT_BRANCH_NAME} || handle_error "Failed to fetch from remote repository."
-git checkout ${GIT_BRANCH_NAME} 2>/dev/null || git checkout -b ${GIT_BRANCH_NAME} origin/${GIT_BRANCH_NAME} || handle_error "Failed to checkout branch."
+
+# Force checkout to overwrite any local files that conflict with repository
+git checkout -f ${GIT_BRANCH_NAME} 2>/dev/null || git checkout -f -B ${GIT_BRANCH_NAME} origin/${GIT_BRANCH_NAME} || handle_error "Failed to checkout branch."
 git reset --hard origin/${GIT_BRANCH_NAME} || handle_error "Failed to reset branch."
 
 #=============================================================================
@@ -278,7 +280,9 @@ sudo docker compose up --build -d 2>/dev/null || sudo docker-compose up --build 
 # Finish
 END_TIME=$(date +%s)
 ELAPSED_TIME=$((END_TIME - START_TIME))
+ELAPSED_MINUTES=$((ELAPSED_TIME / 60))
+ELAPSED_SECONDS=$((ELAPSED_TIME % 60))
 
 print_yellow "Installation completed!"
-print_yellow "Execution time: ${ELAPSED_TIME} seconds"
+print_yellow "Execution time: ${ELAPSED_TIME} seconds (${ELAPSED_MINUTES} min ${ELAPSED_SECONDS} sec)"
 print_yellow "Access the Unity portal at $FRONTEND_WEB_URL"
