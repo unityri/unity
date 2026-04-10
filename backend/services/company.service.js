@@ -208,7 +208,7 @@ exports.updateCompany = async function (company) {
     });
 
     if (typeof isImage != "undefined" && isImage != null && isImage != "") {
-      if (oldCompany.logo != "images/company/default.avif") {
+      if (oldCompany.logo != "images/company/default.png") {
         //console.log("\n User Info >>>>>>",isImage,"\n");
         //Remove Previous User Image
         try {

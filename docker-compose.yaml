@@ -27,6 +27,8 @@ services:
       - 8.8.8.8
       - 8.8.4.4
       - 1.1.1.1
+    volumes:
+      - backend-uploads:/usr/src/app/public
     env_file:
       - backend/.env
     environment:
@@ -39,7 +41,10 @@ services:
     expose:
       - 3000
 
-networks:    
+volumes:
+  backend-uploads:
+
+networks:
   react-express:  # Ensure this network is defined if needed
     driver: bridge
   app-network:

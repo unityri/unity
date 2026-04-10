@@ -8,10 +8,12 @@ frontend/build
 frontend/node_modules
 backend/node_modules
 
-#ignore public images and uploads
+#ignore public (only track backend/public/images/settings/)
 backend/public/*
+!backend/public/images/
+backend/public/images/*
+!backend/public/images/settings/
 backend/uploads/*
-frontend/public/uploads/*
 
 # Logs
 backend/logs/*
